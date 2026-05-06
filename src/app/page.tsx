@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation';
 import { getUserInfo, clearUserInfo } from '@/utils/cookie';
 import { agentApi } from '@/api/agent';
 import { AiAgentConfigResponseDTO } from '@/types/api';
+import { nextClientId } from '@/utils/id-generator';
+import { normalizeSessions } from './session-normalization';
+import { DRAWIO_CONFIG } from '@/config/drawio-config';
 
 // Message type definition
 type Message = {
@@ -119,7 +122,7 @@ export default function Home() {
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [messages, setMessages] = useState<Message[]>([
     {
-      id: '1',
+      id: nextClientId(),
       role: 'agent',
       content: '你好！我是你的智能架构助手。请选择一个智能体开始对话。',
       timestamp: Date.now()
@@ -174,11 +177,12 @@ export default function Home() {
     const savedSessions = localStorage.getItem('drawio_sessions');
     if (savedSessions) {
       try {
-        const parsed = JSON.parse(savedSessions);
+        const parsed = normalizeSessions(JSON.parse(savedSessions));
         setSessions(parsed);
+        localStorage.setItem('drawio_sessions', JSON.stringify(parsed));
         if (parsed.length > 0) {
           // Load the most recent session (first one if sorted by lastModified desc)
-          const mostRecent = parsed.sort((a: Session, b: Session) => b.lastModified - a.lastModified)[0];
+          const mostRecent = [...parsed].sort((a: Session, b: Session) => b.lastModified - a.lastModified)[0];
           setCurrentSessionId(mostRecent.id);
           setMessages(mostRecent.messages);
           // Note: Draw.io XML loading happens after drawioRef is ready or when we switch
@@ -227,11 +231,11 @@ export default function Home() {
 
   const createNewSession = (isInitial = false, backendId = '') => {
     const newSession: Session = {
-      id: Date.now().toString(),
+      id: nextClientId(),
       backendSessionId: backendId,
       title: 'New Chat',
       messages: [{
-        id: Date.now().toString(),
+        id: nextClientId(),
         role: 'agent',
         content: '你好！我是你的智能架构助手。请选择一个智能体开始对话。',
         timestamp: Date.now()
@@ -258,11 +262,12 @@ export default function Home() {
   const loadSession = (targetSessionId: string) => {
     const session = sessions.find(s => s.id === targetSessionId);
     if (session) {
+        const [normalizedSession] = normalizeSessions([session]);
         setCurrentSessionId(targetSessionId);
-        setMessages(session.messages);
-        setSessionId(session.backendSessionId || '');
-        if (drawioRef.current && session.drawIoXml) {
-            drawioRef.current.load({ xml: session.drawIoXml });
+        setMessages(normalizedSession.messages);
+        setSessionId(normalizedSession.backendSessionId || '');
+        if (drawioRef.current && normalizedSession.drawIoXml) {
+            drawioRef.current.load({ xml: normalizedSession.drawIoXml });
         } else if (drawioRef.current) {
             drawioRef.current.load({ xml: '' });
         }
@@ -343,7 +348,7 @@ export default function Home() {
       } catch (error) {
         console.error('Failed to load agents:', error);
         setMessages(prev => [...prev, {
-          id: Date.now().toString(),
+          id: nextClientId(),
           role: 'agent',
           content: '加载智能体列表失败，请检查后端服务是否启动。',
           timestamp: Date.now()
@@ -394,7 +399,7 @@ export default function Home() {
         const newBackendId = res.data.sessionId;
         
         const initialMsg: Message = {
-          id: Date.now().toString(),
+          id: nextClientId(),
           role: 'agent',
           content: '你好！我是你的智能架构助手。请选择一个智能体开始对话。',
           timestamp: Date.now()
@@ -423,7 +428,7 @@ export default function Home() {
   const performSendMessage = async (displayContent: string, apiContent: string) => {
     if (!selectedAgentId) {
       setMessages(prev => [...prev, {
-        id: Date.now().toString(),
+        id: nextClientId(),
         role: 'agent',
         content: '请先选择一个智能体。',
         timestamp: Date.now()
@@ -433,7 +438,7 @@ export default function Home() {
     }
 
     const userMsg: Message = {
-      id: Date.now().toString(),
+      id: nextClientId(),
       role: 'user',
       content: displayContent,
       timestamp: Date.now()
@@ -470,7 +475,7 @@ export default function Home() {
       // Handle response based on type
       if (type === 'user') {
         const agentMsg: Message = {
-          id: (Date.now() + 1).toString(),
+          id: nextClientId(),
           role: 'agent',
           content: content,
           timestamp: Date.now()
@@ -504,7 +509,7 @@ export default function Home() {
     } catch (error) {
       console.error('Chat error:', error);
       const errorMsg: Message = {
-        id: (Date.now() + 1).toString(),
+        id: nextClientId(),
         role: 'agent',
         content: error instanceof Error ? `Error: ${error.message}` : '发送失败，请重试。',
         timestamp: Date.now()
@@ -591,7 +596,7 @@ export default function Home() {
                <polyline points="21 15 16 10 5 21"></polyline>
             </svg>
           </div>
-          <h1 className="text-lg font-bold text-slate-800 tracking-tight">ai + draw.io <span className="text-slate-400 font-normal text-sm ml-2">@小傅哥</span></h1>
+          <h1 className="text-lg font-bold text-slate-800 tracking-tight">ai + draw.io <span className="text-slate-400 font-normal text-sm ml-2">@达达芬奇</span></h1>
         </div>
         
         <div className="flex items-center gap-3">
@@ -697,6 +702,7 @@ export default function Home() {
           <div className="flex-1 m-3 rounded-2xl overflow-hidden border border-slate-200 shadow-sm bg-white ring-1 ring-slate-100">
             <DrawIoEmbed 
               ref={drawioRef}
+              baseUrl={DRAWIO_CONFIG.BASE_URL}
               autosave={true}
               onAutoSave={(data) => {
                 if (currentSessionId && isDrawIoReady && !isExportingForChatRef.current) {

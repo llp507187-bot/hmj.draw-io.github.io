@@ -1,4 +1,5 @@
 import { API_CONFIG } from '@/config/api-config';
+import { buildRequestInit } from './request-init';
 import { 
     Response, 
     AiAgentConfigResponseDTO, 
@@ -25,12 +26,7 @@ export const agentApi = {
      * Path: /api/v1/query_ai_agent_config_list
      */
     queryAiAgentConfigList: async (): Promise<Response<AiAgentConfigResponseDTO[]>> => {
-        const response = await fetch(`${API_CONFIG.BASE_URL}/query_ai_agent_config_list`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        const response = await fetch(`${API_CONFIG.BASE_URL}/query_ai_agent_config_list`, buildRequestInit('GET'));
         return handleResponse<AiAgentConfigResponseDTO[]>(response);
     },
 
@@ -39,13 +35,10 @@ export const agentApi = {
      * Path: /api/v1/create_session
      */
     createSession: async (agentId: string, userId: string): Promise<Response<CreateSessionResponseDTO>> => {
-        const response = await fetch(`${API_CONFIG.BASE_URL}/create_session`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ agentId, userId }),
-        });
+        const response = await fetch(
+            `${API_CONFIG.BASE_URL}/create_session`,
+            buildRequestInit('POST', { agentId, userId })
+        );
         return handleResponse<CreateSessionResponseDTO>(response);
     },
 
@@ -54,13 +47,7 @@ export const agentApi = {
      * Path: /api/v1/chat
      */
     chat: async (data: ChatRequestDTO): Promise<Response<ChatResponseDTO>> => {
-        const response = await fetch(`${API_CONFIG.BASE_URL}/chat`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(data),
-        });
+        const response = await fetch(`${API_CONFIG.BASE_URL}/chat`, buildRequestInit('POST', data));
         return handleResponse<ChatResponseDTO>(response);
     }
 };
