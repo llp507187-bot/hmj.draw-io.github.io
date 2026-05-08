@@ -6,10 +6,10 @@
 set -e
 
 # Define variables for the registry and image
-ALIYUN_REGISTRY="registry.cn-hangzhou.aliyuncs.com"
-NAMESPACE="fuzhengwei"
+ALIYUN_REGISTRY="crpi-d8wkeqc8iito8tty.cn-hangzhou.personal.cr.aliyuncs.com"
+NAMESPACE="hmj-aistudy"
 IMAGE_NAME="ai-draw-io-front"
-IMAGE_TAG="1.1"
+IMAGE_TAG="1.2"
 
 # 读取本地配置文件
 if [ -f ".local-config" ]; then

@@ -8,8 +8,8 @@ echo "Building Docker image with API Base URL: $API_URL"
 
 # Build the Docker image
 # We pass the NEXT_PUBLIC_API_BASE_URL as a build argument
-docker build --platform linux/amd64,linux/arm64 \
+docker build --platform linux/amd64 \
   --build-arg NEXT_PUBLIC_API_BASE_URL="$API_URL" \
-  --load -t fuzhengwei/ai-draw-io-front:1.1 .
+  --load -t hmj-aistudy/ai-draw-io-front:1.2 .
 
 echo "Build complete. Image tagged as ai-draw-io-front:latest"

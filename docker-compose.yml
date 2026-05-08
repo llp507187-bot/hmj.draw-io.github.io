@@ -3,7 +3,7 @@ version: '3.8'
 services:
   ai-draw-io-front:
     container_name: ai-draw-io-front
-    image: fuzhengwei/ai-draw-io-front:1.0
+    image: crpi-d8wkeqc8iito8tty.cn-hangzhou.personal.cr.aliyuncs.com/hmj-aistudy/ai-draw-io-front:1.1
     restart: always
     ports:
       - "3000:3000"
